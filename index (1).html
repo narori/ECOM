@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECOM Knowledge Bot</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --teal:#1D9E75;--teal-d:#0F6E56;--teal-l:#E1F5EE;--teal-m:#5DCAA5;
+  --bg:#f8f9fa;--sur:#ffffff;--bdr:#e5e7eb;--txt:#111827;--mut:#6b7280;
+  --red:#ef4444;--r:10px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#0f1117;--sur:#1a1d27;--bdr:#2d3140;--txt:#f1f5f9;--mut:#94a3b8;--teal-l:#0a2e22;
+}}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
+.app{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+@media(max-width:700px){.app{grid-template-columns:1fr}}
+
+/* sidebar */
+.sb{background:var(--sur);border-right:1px solid var(--bdr);display:flex;flex-direction:column;overflow:hidden}
+.sbh{padding:16px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px}
+.logo{width:36px;height:36px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px}
+.sbt{font-size:14px;font-weight:600}
+.sbs{font-size:11px;color:var(--mut);margin-top:1px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--teal);display:inline-block;margin-right:4px}
+.sbb{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:16px}
+.slbl{font-size:10px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px}
+
+/* doc status */
+.doc-status{background:var(--teal-l);border-radius:var(--r);padding:12px}
+.doc-loading{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--teal-d)}
+.doc-list{display:flex;flex-direction:column;gap:5px}
+.doc-item{display:flex;align-items:center;gap:7px;padding:7px 9px;background:var(--bg);border-radius:7px;border:1px solid var(--bdr);font-size:12px}
+.doc-ok{color:var(--teal);font-size:14px;flex-shrink:0}
+.doc-err{color:var(--red);font-size:14px;flex-shrink:0}
+.doc-spin{animation:spin 1s linear infinite;font-size:14px;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.doc-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.doc-size{font-size:10px;color:var(--mut);flex-shrink:0}
+
+/* stats */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.stat{background:var(--teal-l);border-radius:8px;padding:9px 11px}
+.stn{font-size:20px;font-weight:700;color:var(--teal-d)}
+.stl{font-size:10px;color:var(--teal-d);opacity:.8}
+
+/* lang */
+.langs{display:flex;flex-wrap:wrap;gap:5px}
+.lb{font-size:11px;padding:4px 11px;border-radius:20px;border:1px solid var(--bdr);background:var(--bg);color:var(--mut);cursor:pointer;transition:.15s;font-weight:500}
+.lb:hover{border-color:var(--teal);color:var(--teal)}
+.lb.on{background:var(--teal);color:#fff;border-color:var(--teal)}
+
+/* admin panel */
+.admin-toggle{font-size:11px;color:var(--mut);cursor:pointer;display:flex;align-items:center;gap:5px;background:none;border:none;padding:0;font-family:inherit}
+.admin-toggle:hover{color:var(--txt)}
+.admin-panel{display:none;flex-direction:column;gap:9px;margin-top:8px}
+.admin-panel.open{display:flex}
+.lbl{font-size:11px;color:var(--mut);font-weight:500;display:block;margin-bottom:3px}
+.inp{width:100%;padding:7px 9px;border:1px solid var(--bdr);border-radius:7px;font-size:12px;background:var(--bg);color:var(--txt);outline:none;transition:border-color .15s}
+.inp:focus{border-color:var(--teal)}
+.inp[type=password]{font-family:monospace}
+.note{font-size:10px;color:var(--mut)}
+.note a{color:var(--teal);text-decoration:none}
+.sbtn{padding:7px 14px;background:var(--teal);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;transition:background .15s}
+.sbtn:hover{background:var(--teal-d)}
+
+/* main */
+.main{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.topbar{padding:12px 16px;border-bottom:1px solid var(--bdr);background:var(--sur);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.tbn{font-weight:600;font-size:14px}
+.tbs{font-size:11px;color:var(--mut)}
+.tag{font-size:10px;padding:3px 9px;border-radius:20px;background:var(--teal-l);color:var(--teal-d);font-weight:600;flex-shrink:0}
+.clr{margin-left:auto;font-size:11px;color:var(--mut);border:none;background:none;cursor:pointer;padding:5px 8px;border-radius:5px;transition:.15s}
+.clr:hover{background:var(--bg);color:var(--txt)}
+.msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:13px;scroll-behavior:smooth}
+.msg{display:flex;gap:9px;max-width:720px;animation:fi .2s ease}
+@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.msg.u{flex-direction:row-reverse;margin-left:auto}
+.av{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.av-b{background:var(--teal);color:#fff;font-size:14px}
+.av-u{background:#e0e7ff;color:#3730a3}
+.bbl{padding:10px 13px;border-radius:12px;font-size:13px;line-height:1.6;max-width:calc(100% - 42px);word-break:break-word;white-space:pre-wrap}
+.msg.b .bbl{background:var(--sur);border:1px solid var(--bdr);border-bottom-left-radius:3px}
+.msg.u .bbl{background:var(--teal);color:#fff;border-bottom-right-radius:3px}
+.typing{display:flex;gap:4px;align-items:center;padding:4px 0}
+.d{width:6px;height:6px;border-radius:50%;background:var(--teal-m);animation:bo .9s infinite}
+.d:nth-child(2){animation-delay:.2s}.d:nth-child(3){animation-delay:.4s}
+@keyframes bo{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+.welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center;gap:12px}
+.wi{width:56px;height:56px;border-radius:50%;background:var(--teal-l);display:flex;align-items:center;justify-content:center;font-size:26px}
+.welcome h1{font-size:18px;font-weight:600}
+.welcome p{font-size:13px;color:var(--mut);max-width:360px;line-height:1.6}
+.init-bar{background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:10px 13px;margin:0 16px 12px;font-size:13px;color:#856404;display:flex;align-items:center;gap:8px}
+.ia{padding:12px 16px;border-top:1px solid var(--bdr);background:var(--sur);flex-shrink:0}
+.irow{display:flex;gap:7px;align-items:flex-end}
+.ta{flex:1;resize:none;border:1px solid var(--bdr);border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--txt);line-height:1.5;min-height:40px;max-height:110px;outline:none;transition:border-color .15s}
+.ta:focus{border-color:var(--teal)}
+.send{width:40px;height:40px;border-radius:9px;background:var(--teal);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;font-size:16px}
+.send:hover{background:var(--teal-d)}
+.send:disabled{opacity:.4;cursor:not-allowed}
+.hint{font-size:10px;color:var(--mut);margin-top:5px;text-align:center}
+</style>
+</head>
+<body>
+<div class="app">
+
+<aside class="sb">
+  <div class="sbh">
+    <div class="logo">🤖</div>
+    <div>
+      <div class="sbt" id="sb-name">ECOM Knowledge Bot</div>
+      <div class="sbs"><span class="dot"></span>En línea · 37 países</div>
+    </div>
+  </div>
+  <div class="sbb">
+
+    <!-- DOC STATUS (auto-loaded) -->
+    <div>
+      <div class="slbl">Documentos de conocimiento</div>
+      <div class="doc-status">
+        <div class="doc-loading" id="doc-loading">
+          <span class="doc-spin">⟳</span> Cargando documentos...
+        </div>
+        <div class="doc-list" id="doc-list" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div>
+      <div class="slbl">Actividad</div>
+      <div class="stats">
+        <div class="stat"><div class="stn" id="s-docs">0</div><div class="stl">Docs activos</div></div>
+        <div class="stat"><div class="stn" id="s-msgs">0</div><div class="stl">Mensajes</div></div>
+      </div>
+    </div>
+
+    <!-- LANGUAGE -->
+    <div>
+      <div class="slbl">Idioma de respuesta</div>
+      <div class="langs" id="langs">
+        <button class="lb on" data-l="auto">Auto</button>
+        <button class="lb" data-l="Español">ES</button>
+        <button class="lb" data-l="English">EN</button>
+        <button class="lb" data-l="Português">PT</button>
+        <button class="lb" data-l="Français">FR</button>
+        <button class="lb" data-l="Kiswahili">SW</button>
+      </div>
+    </div>
+
+    <!-- ADMIN (oculto por defecto) -->
+    <div>
+      <button class="admin-toggle" onclick="toggleAdmin()">
+        <span id="admin-arrow">▶</span> Configuración avanzada
+      </button>
+      <div class="admin-panel" id="admin-panel">
+        <div>
+          <label class="lbl">API Key de Anthropic</label>
+          <input class="inp" type="password" id="api-key" placeholder="sk-ant-...">
+          <div class="note">Obtén la tuya en <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></div>
+        </div>
+        <div>
+          <label class="lbl">Nombre del bot</label>
+          <input class="inp" type="text" id="bot-name" value="ECOM Knowledge Bot" maxlength="50">
+        </div>
+        <div>
+          <label class="lbl">GitHub usuario/repo (para PDFs)</label>
+          <input class="inp" type="text" id="gh-repo" placeholder="tu-usuario/ecom-bot">
+          <div class="note">Los PDFs deben estar en la carpeta <code>docs/</code> del repo</div>
+        </div>
+        <button class="sbtn" onclick="saveConfig()">Guardar configuración</button>
+      </div>
+    </div>
+
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <span style="font-size:20px">🤖</span>
+    <div>
+      <div class="tbn" id="tb-name">ECOM Knowledge Bot</div>
+      <div class="tbs">Responde solo desde los documentos oficiales · Powered by Claude</div>
+    </div>
+    <span class="tag" id="docs-tag">cargando...</span>
+    <button class="clr" onclick="clearChat()">🗑 Limpiar</button>
+  </div>
+
+  <div id="init-bar" class="init-bar" style="display:none">
+    ⏳ Cargando documentos, un momento...
+  </div>
+
+  <div class="msgs" id="msgs">
+    <div class="welcome" id="ws">
+      <div class="wi">🤖</div>
+      <h1 id="wt">ECOM Knowledge Bot</h1>
+      <p id="wp">Cargando documentos de conocimiento... Por favor espera un momento.</p>
+    </div>
+  </div>
+
+  <div class="ia">
+    <div class="irow">
+      <textarea class="ta" id="q" placeholder="Escribe tu pregunta en cualquier idioma..." rows="1" disabled></textarea>
+      <button class="send" id="send-btn" onclick="send()" title="Enviar" disabled>➤</button>
+    </div>
+    <div class="hint">Enter para enviar · Shift+Enter para nueva línea</div>
+  </div>
+</main>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  CONFIGURACIÓN — EDITA AQUÍ
+// ══════════════════════════════════════════════
+const CONFIG = {
+  // Tu API Key de Anthropic (o déjala vacía y usa el panel de config)
+  API_KEY: '',
+
+  // Nombre del bot
+  BOT_NAME: 'ECOM Knowledge Bot',
+
+  // GitHub: tu usuario y repositorio
+  GH_USER: 'TU-USUARIO',
+  GH_REPO: 'ecom-bot',
+
+  // Lista exacta de archivos PDF en la carpeta docs/ de tu repo
+  // Agrega o quita archivos aquí para controlar qué documentos usa el bot
+  PDF_FILES: [
+    'manual-operaciones.pdf',
+    'politicas-empresa.pdf',
+    'catalogo-productos.pdf',
+    // Agrega más archivos aquí...
+  ]
+};
+// ══════════════════════════════════════════════
+
+let pdfs = [], lang = 'auto', msgCount = 0, loading = false, docsReady = false;
+
+// Cargar config guardada
+const saved = {
+  key: localStorage.getItem('ebot_key') || CONFIG.API_KEY,
+  name: localStorage.getItem('ebot_name') || CONFIG.BOT_NAME,
+  repo: localStorage.getItem('ebot_repo') || (CONFIG.GH_USER + '/' + CONFIG.GH_REPO)
+};
+
+window.onload = async () => {
+  document.getElementById('api-key').value = saved.key;
+  document.getElementById('bot-name').value = saved.name;
+  document.getElementById('gh-repo').value = saved.repo;
+  applyName(saved.name);
+  setupLangs();
+  const ta = document.getElementById('q');
+  ta.addEventListener('input', () => { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 110) + 'px'; });
+  ta.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+  await loadDocs();
+};
+
+function applyName(n) {
+  document.getElementById('sb-name').textContent = n;
+  document.getElementById('tb-name').textContent = n;
+  document.getElementById('wt').textContent = n;
+  document.title = n;
+}
+
+function toggleAdmin() {
+  const p = document.getElementById('admin-panel');
+  const a = document.getElementById('admin-arrow');
+  const open = p.classList.toggle('open');
+  a.textContent = open ? '▼' : '▶';
+}
+
+function saveConfig() {
+  saved.key = document.getElementById('api-key').value.trim();
+  saved.name = document.getElementById('bot-name').value.trim() || 'ECOM Bot';
+  saved.repo = document.getElementById('gh-repo').value.trim();
+  localStorage.setItem('ebot_key', saved.key);
+  localStorage.setItem('ebot_name', saved.name);
+  localStorage.setItem('ebot_repo', saved.repo);
+  applyName(saved.name);
+  const b = document.querySelector('.sbtn');
+  b.textContent = '✓ Guardado';
+  setTimeout(() => b.textContent = 'Guardar configuración', 2000);
+}
+
+// ── CARGA AUTOMÁTICA DE PDFs DESDE GITHUB ──
+async function loadDocs() {
+  const repoStr = saved.repo || (CONFIG.GH_USER + '/' + CONFIG.GH_REPO);
+  const [user, repo] = repoStr.split('/');
+  const files = CONFIG.PDF_FILES;
+
+  if (!user || user === 'TU-USUARIO' || files.length === 0) {
+    showDocError('Configura el repositorio de GitHub y la lista de PDFs en CONFIG.');
+    return;
+  }
+
+  document.getElementById('init-bar').style.display = 'flex';
+  const list = document.getElementById('doc-list');
+  const loadingEl = document.getElementById('doc-loading');
+
+  // Mostrar items en estado "cargando"
+  list.style.display = 'flex';
+  list.innerHTML = files.map(f => `
+    <div class="doc-item" id="di-${sanitizeId(f)}">
+      <span class="doc-spin">⟳</span>
+      <span class="doc-name">${f}</span>
+    </div>`).join('');
+  loadingEl.style.display = 'none';
+
+  let loaded = 0;
+  const promises = files.map(async (filename) => {
+    const url = `https://raw.githubusercontent.com/${user}/${repo}/main/docs/${encodeURIComponent(filename)}`;
+    const id = sanitizeId(filename);
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const blob = await res.blob();
+      const b64 = await blobToBase64(blob);
+      pdfs.push({ name: filename, data: b64.split(',')[1], size: blob.size });
+      loaded++;
+      updateDocItem(id, 'ok', filename, blob.size);
+    } catch (e) {
+      updateDocItem(id, 'err', filename, 0, e.message);
+    }
+  });
+
+  await Promise.all(promises);
+
+  document.getElementById('init-bar').style.display = 'none';
+  document.getElementById('s-docs').textContent = loaded;
+  document.getElementById('docs-tag').textContent = loaded + ' doc' + (loaded !== 1 ? 's' : '');
+
+  if (loaded > 0) {
+    docsReady = true;
+    document.getElementById('q').disabled = false;
+    document.getElementById('send-btn').disabled = false;
+    updateWelcome(loaded, files.length);
+  } else {
+    showDocError('No se pudieron cargar los documentos. Verifica la configuración.');
+  }
+}
+
+function updateDocItem(id, status, name, size, err) {
+  const el = document.getElementById('di-' + id);
+  if (!el) return;
+  const icon = status === 'ok' ? '<span class="doc-ok">✓</span>' : '<span class="doc-err">✗</span>';
+  const sizeStr = size ? `<span class="doc-size">${(size/1024).toFixed(0)}KB</span>` : '';
+  const errStr = err ? `<span style="font-size:10px;color:var(--red);margin-left:4px" title="${err}">!</span>` : '';
+  el.innerHTML = `${icon}<span class="doc-name">${name}</span>${sizeStr}${errStr}`;
+}
+
+function showDocError(msg) {
+  document.getElementById('doc-loading').innerHTML = `<span style="color:var(--red)">⚠ ${msg}</span>`;
+  document.getElementById('docs-tag').textContent = 'sin docs';
+  document.getElementById('wt').textContent = 'Configuración requerida';
+  document.getElementById('wp').textContent = msg;
+}
+
+function updateWelcome(loaded, total) {
+  document.getElementById('wp').textContent =
+    `${loaded} de ${total} documento${total !== 1 ? 's' : ''} cargado${loaded !== 1 ? 's' : ''}. ¡Listo! Haz tu primera pregunta.`;
+}
+
+function blobToBase64(blob) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = rej;
+    r.readAsDataURL(blob);
+  });
+}
+
+function sanitizeId(str) { return str.replace(/[^a-zA-Z0-9]/g, '_'); }
+
+// ── LANGUAGE ──
+function setupLangs() {
+  document.getElementById('langs').addEventListener('click', e => {
+    const b = e.target.closest('.lb'); if (!b) return;
+    document.querySelectorAll('.lb').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    lang = b.dataset.l;
+  });
+}
+
+// ── CHAT ──
+function addMsg(role, text) {
+  const ws = document.getElementById('ws'); if (ws) ws.remove();
+  const c = document.getElementById('msgs');
+  const isU = role === 'user';
+  const d = document.createElement('div'); d.className = 'msg ' + (isU ? 'u' : 'b');
+  d.innerHTML = `<div class="av ${isU ? 'av-u' : 'av-b'}">${isU ? 'Yo' : '🤖'}</div><div class="bbl">${esc(text)}</div>`;
+  c.appendChild(d); c.scrollTop = c.scrollHeight;
+  if (isU) { msgCount++; document.getElementById('s-msgs').textContent = msgCount; }
+}
+
+function showTyping() {
+  const c = document.getElementById('msgs');
+  const d = document.createElement('div'); d.className = 'msg b'; d.id = 'ty';
+  d.innerHTML = `<div class="av av-b">🤖</div><div class="bbl"><div class="typing"><div class="d"></div><div class="d"></div><div class="d"></div></div></div>`;
+  c.appendChild(d); c.scrollTop = c.scrollHeight;
+}
+function removeTyping() { const e = document.getElementById('ty'); if (e) e.remove(); }
+function esc(t) { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function clearChat() {
+  const c = document.getElementById('msgs'); c.innerHTML = ''; msgCount = 0;
+  document.getElementById('s-msgs').textContent = 0;
+  const ws = document.createElement('div'); ws.id = 'ws'; ws.className = 'welcome';
+  ws.innerHTML = `<div class="wi">🤖</div><h1>${saved.name}</h1><p>Chat reiniciado. Haz una nueva pregunta.</p>`;
+  c.appendChild(ws);
+}
+
+async function send() {
+  const q = document.getElementById('q').value.trim();
+  if (!q || loading || !docsReady) return;
+  const key = saved.key;
+  if (!key) { alert('Ingresa tu Anthropic API Key en Configuración avanzada'); return; }
+
+  loading = true;
+  document.getElementById('send-btn').disabled = true;
+  const ta = document.getElementById('q'); ta.value = ''; ta.style.height = 'auto';
+  addMsg('user', q); showTyping();
+
+  const li = lang === 'auto'
+    ? 'Detect the language the user wrote in and reply in that exact same language.'
+    : `Always reply in ${lang}.`;
+
+  const sys = `You are ${saved.name}, a corporate knowledge assistant.
+Answer ONLY using the provided PDF documents. Do not use outside knowledge.
+If the answer is not found in the documents, clearly say so.
+When relevant, cite the document your answer comes from.
+Be concise and helpful.
+${li}`;
+
+  const content = pdfs.map(p => ({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: p.data } }));
+  content.push({ type: 'text', text: q });
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-calls': 'true'
+      },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1500, system: sys, messages: [{ role: 'user', content }] })
+    });
+    const data = await res.json(); removeTyping();
+    if (data.content && data.content[0]) addMsg('bot', data.content[0].text);
+    else if (data.error) addMsg('bot', '⚠️ Error: ' + (data.error.message || 'Error desconocido'));
+    else addMsg('bot', '⚠️ Respuesta inesperada.');
+  } catch (e) {
+    removeTyping();
+    addMsg('bot', '⚠️ Error de conexión. Verifica tu API key e inténtalo de nuevo.');
+  }
+  loading = false;
+  document.getElementById('send-btn').disabled = false;
+  document.getElementById('q').focus();
+}
+</script>
+</body>
+</html>
