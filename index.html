@@ -25,16 +25,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
 .dot{width:7px;height:7px;border-radius:50%;background:var(--teal);display:inline-block;margin-right:4px}
 .sbb{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:16px}
 .slbl{font-size:10px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px}
-.doc-status{background:var(--teal-l);border-radius:var(--r);padding:12px}
-.doc-loading{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--teal-d)}
-.doc-list{display:flex;flex-direction:column;gap:5px}
-.doc-item{display:flex;align-items:center;gap:7px;padding:7px 9px;background:var(--bg);border-radius:7px;border:1px solid var(--bdr);font-size:12px}
-.doc-ok{color:var(--teal);font-size:14px;flex-shrink:0}
-.doc-err{color:var(--red);font-size:14px;flex-shrink:0}
-.doc-spin{animation:spin 1s linear infinite;font-size:14px;flex-shrink:0;display:inline-block}
-@keyframes spin{to{transform:rotate(360deg)}}
-.doc-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
-.doc-size{font-size:10px;color:var(--mut);flex-shrink:0}
+.info-box{background:var(--teal-l);border-radius:var(--r);padding:12px;font-size:12px;color:var(--teal-d);line-height:1.5}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .stat{background:var(--teal-l);border-radius:8px;padding:9px 11px}
 .stn{font-size:20px;font-weight:700;color:var(--teal-d)}
@@ -72,7 +63,6 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
 .irow{display:flex;gap:7px;align-items:flex-end}
 .ta{flex:1;resize:none;border:1px solid var(--bdr);border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--txt);line-height:1.5;min-height:40px;max-height:110px;outline:none;transition:border-color .15s}
 .ta:focus{border-color:var(--teal)}
-.ta:disabled{opacity:.5;cursor:not-allowed}
 .send{width:40px;height:40px;border-radius:9px;background:var(--teal);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;font-size:16px}
 .send:hover{background:var(--teal-d)}
 .send:disabled{opacity:.4;cursor:not-allowed}
@@ -93,20 +83,18 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
   <div class="sbb">
 
     <div>
-      <div class="slbl">Documentos de conocimiento</div>
-      <div class="doc-status">
-        <div class="doc-loading" id="doc-loading">
-          <span class="doc-spin">⟳</span> Cargando documentos...
-        </div>
-        <div class="doc-list" id="doc-list" style="display:none"></div>
+      <div class="slbl">Base de conocimiento</div>
+      <div class="info-box">
+        ✓ Manual de operaciones indexado (23 secciones)<br>
+        Búsqueda inteligente activada
       </div>
     </div>
 
     <div>
       <div class="slbl">Actividad</div>
       <div class="stats">
-        <div class="stat"><div class="stn" id="s-docs">0</div><div class="stl">Docs activos</div></div>
         <div class="stat"><div class="stn" id="s-msgs">0</div><div class="stl">Mensajes</div></div>
+        <div class="stat"><div class="stn" id="s-sources">0</div><div class="stl">Fuentes citadas</div></div>
       </div>
     </div>
 
@@ -130,9 +118,9 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
     <span style="font-size:20px">🤖</span>
     <div>
       <div class="tbn">ECOM Knowledge Bot</div>
-      <div class="tbs">Responde solo desde los documentos oficiales · Powered by Claude</div>
+      <div class="tbs">Búsqueda inteligente · Powered by Claude</div>
     </div>
-    <span class="tag" id="docs-tag">cargando...</span>
+    <span class="tag">RAG activo</span>
     <button class="clr" onclick="clearChat()">🗑 Limpiar</button>
   </div>
 
@@ -140,14 +128,14 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
     <div class="welcome" id="ws">
       <div class="wi">🤖</div>
       <h1>ECOM Knowledge Bot</h1>
-      <p id="wp">Cargando documentos de conocimiento... Un momento por favor.</p>
+      <p>Pregúntame lo que quieras sobre el manual de operaciones. Busco en la documentación y respondo solo con información verificada.</p>
     </div>
   </div>
 
   <div class="ia">
     <div class="irow">
-      <textarea class="ta" id="q" placeholder="Escribe tu pregunta en cualquier idioma..." rows="1" disabled></textarea>
-      <button class="send" id="send-btn" onclick="send()" title="Enviar" disabled>➤</button>
+      <textarea class="ta" id="q" placeholder="Escribe tu pregunta en cualquier idioma..." rows="1"></textarea>
+      <button class="send" id="send-btn" onclick="send()" title="Enviar">➤</button>
     </div>
     <div class="hint">Enter para enviar · Shift+Enter para nueva línea</div>
   </div>
@@ -156,29 +144,17 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
 
 <script>
 // ══════════════════════════════════════════════
-//  CONFIGURACIÓN — EDITA AQUÍ
+//  CONFIGURACIÓN
 // ══════════════════════════════════════════════
 const CONFIG = {
-  // URL de tu Cloudflare Worker (ya configurada)
   WORKER_URL: 'https://ecom-proxy.natalia-galvan.workers.dev',
-
-  // Tu usuario y repo de GitHub
-  GH_USER: 'narori',
-  GH_REPO: 'ECOM',
-
-  // Lista exacta de PDFs en la carpeta docs/ de tu repo
-  // Agrega o quita archivos aquí para actualizar el conocimiento del bot
-  PDF_FILES: [
-    'manual-operaciones.pdf',
-  ],
-
   BOT_NAME: 'ECOM Knowledge Bot',
 };
 // ══════════════════════════════════════════════
 
-let pdfs=[], lang='auto', msgCount=0, loading=false, docsReady=false;
+let lang = 'auto', msgCount = 0, sourcesCount = 0, loading = false;
 
-window.onload = async () => {
+window.onload = () => {
   setupLangs();
   const ta = document.getElementById('q');
   ta.addEventListener('input', () => {
@@ -188,86 +164,8 @@ window.onload = async () => {
   ta.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
   });
-  await loadDocs();
 };
 
-// ── CARGA AUTOMÁTICA DE PDFs DESDE GITHUB ──
-async function loadDocs() {
-  const { GH_USER, GH_REPO, PDF_FILES } = CONFIG;
-
-  if (!GH_USER || GH_USER === 'TU-USUARIO-GITHUB' || PDF_FILES.length === 0) {
-    showDocError('Configura GH_USER y PDF_FILES en el código.');
-    return;
-  }
-
-  const list = document.getElementById('doc-list');
-  const loadingEl = document.getElementById('doc-loading');
-  list.style.display = 'flex';
-  list.innerHTML = PDF_FILES.map(f => `
-    <div class="doc-item" id="di-${sid(f)}">
-      <span class="doc-spin">⟳</span>
-      <span class="doc-name">${f}</span>
-    </div>`).join('');
-  loadingEl.style.display = 'none';
-
-  let loaded = 0;
-  await Promise.all(PDF_FILES.map(async filename => {
-    const url = `https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/main/docs/${encodeURIComponent(filename)}`;
-    const id = sid(filename);
-    try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const blob = await res.blob();
-      const b64 = await blobToB64(blob);
-      pdfs.push({ name: filename, data: b64.split(',')[1], size: blob.size });
-      loaded++;
-      setDocItem(id, 'ok', filename, blob.size);
-    } catch(e) {
-      setDocItem(id, 'err', filename, 0);
-    }
-  }));
-
-  document.getElementById('s-docs').textContent = loaded;
-  document.getElementById('docs-tag').textContent = loaded + ' doc' + (loaded !== 1 ? 's' : '');
-
-  if (loaded > 0) {
-    docsReady = true;
-    document.getElementById('q').disabled = false;
-    document.getElementById('send-btn').disabled = false;
-    document.getElementById('wp').textContent =
-      loaded + ' documento' + (loaded !== 1 ? 's' : '') + ' cargado' + (loaded !== 1 ? 's' : '') + '. ¡Haz tu primera pregunta!';
-  } else {
-    showDocError('No se pudieron cargar los documentos. Verifica el repositorio y la carpeta docs/.');
-  }
-}
-
-function setDocItem(id, status, name, size) {
-  const el = document.getElementById('di-' + id);
-  if (!el) return;
-  const icon = status === 'ok'
-    ? '<span class="doc-ok">✓</span>'
-    : '<span class="doc-err">✗</span>';
-  const sz = size ? `<span class="doc-size">${(size/1024).toFixed(0)}KB</span>` : '';
-  el.innerHTML = `${icon}<span class="doc-name">${name}</span>${sz}`;
-}
-
-function showDocError(msg) {
-  document.getElementById('doc-loading').innerHTML = `<span style="color:var(--red);font-size:12px">⚠ ${msg}</span>`;
-  document.getElementById('docs-tag').textContent = 'sin docs';
-}
-
-function blobToB64(blob) {
-  return new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(r.result);
-    r.onerror = rej;
-    r.readAsDataURL(blob);
-  });
-}
-
-function sid(str) { return str.replace(/[^a-zA-Z0-9]/g, '_'); }
-
-// ── IDIOMA ──
 function setupLangs() {
   document.getElementById('langs').addEventListener('click', e => {
     const b = e.target.closest('.lb'); if (!b) return;
@@ -277,7 +175,6 @@ function setupLangs() {
   });
 }
 
-// ── CHAT ──
 function addMsg(role, text) {
   const ws = document.getElementById('ws'); if (ws) ws.remove();
   const c = document.getElementById('msgs');
@@ -307,10 +204,9 @@ function clearChat() {
   c.appendChild(ws);
 }
 
-// ── ENVIAR MENSAJE AL WORKER ──
 async function send() {
   const q = document.getElementById('q').value.trim();
-  if (!q || loading || !docsReady) return;
+  if (!q || loading) return;
 
   loading = true;
   document.getElementById('send-btn').disabled = true;
@@ -318,33 +214,11 @@ async function send() {
   addMsg('user', q);
   showTyping();
 
-  const li = lang === 'auto'
-    ? 'Detect the language the user wrote in and reply in that exact same language.'
-    : `Always reply in ${lang}.`;
-
-  const sys = `You are ${CONFIG.BOT_NAME}, a corporate knowledge assistant for ECOM Trading.
-Answer ONLY using the provided PDF documents. Do not use outside knowledge.
-If the answer is not found in the documents, clearly say so — do not invent information.
-When relevant, mention which document your answer comes from.
-Be concise, clear and helpful.
-${li}`;
-
-  const content = pdfs.map(p => ({
-    type: 'document',
-    source: { type: 'base64', media_type: 'application/pdf', data: p.data }
-  }));
-  content.push({ type: 'text', text: q });
-
   try {
     const res = await fetch(CONFIG.WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-5-20250929',
-        max_tokens: 1500,
-        system: sys,
-        messages: [{ role: 'user', content }]
-      })
+      body: JSON.stringify({ question: q, lang })
     });
     const data = await res.json();
     removeTyping();
