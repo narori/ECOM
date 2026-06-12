@@ -15,7 +15,7 @@
   --bg:#0f1117;--sur:#1a1d27;--bdr:#2d3140;--txt:#f1f5f9;--mut:#94a3b8;--teal-l:#0a2e22;
 }}
 body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
-.app{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+.app{display:grid;grid-template-columns:1fr;min-height:100vh}
 @media(max-width:700px){.app{grid-template-columns:1fr}}
 .sb{background:var(--sur);border-right:1px solid var(--bdr);display:flex;flex-direction:column;overflow:hidden}
 .sbh{padding:16px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px}
@@ -71,47 +71,6 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
 </head>
 <body>
 <div class="app">
-
-<aside class="sb">
-  <div class="sbh">
-    <div class="logo">🤖</div>
-    <div>
-      <div class="sbt">ECOM Knowledge Bot</div>
-      <div class="sbs"><span class="dot"></span>En línea · 37 países</div>
-    </div>
-  </div>
-  <div class="sbb">
-
-    <div>
-      <div class="slbl">Base de conocimiento</div>
-      <div class="info-box">
-        ✓ Manual de operaciones indexado (23 secciones)<br>
-        Búsqueda inteligente activada
-      </div>
-    </div>
-
-    <div>
-      <div class="slbl">Actividad</div>
-      <div class="stats">
-        <div class="stat"><div class="stn" id="s-msgs">0</div><div class="stl">Mensajes</div></div>
-        <div class="stat"><div class="stn" id="s-sources">0</div><div class="stl">Fuentes citadas</div></div>
-      </div>
-    </div>
-
-    <div>
-      <div class="slbl">Idioma de respuesta</div>
-      <div class="langs" id="langs">
-        <button class="lb on" data-l="auto">Auto</button>
-        <button class="lb" data-l="Español">ES</button>
-        <button class="lb" data-l="English">EN</button>
-        <button class="lb" data-l="Português">PT</button>
-        <button class="lb" data-l="Français">FR</button>
-        <button class="lb" data-l="Kiswahili">SW</button>
-      </div>
-    </div>
-
-  </div>
-</aside>
 
 <main class="main">
   <div class="topbar">
